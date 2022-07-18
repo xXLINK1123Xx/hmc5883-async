@@ -32,7 +32,7 @@ async fn main(_spawner: Spawner, p: Peripherals) {
         // on l. 243 in the driver to get bad readings :)
         match hmc.get_mag_vector().await {
             Ok(mag) => info!("Magnitude vector: {:?}", mag),
-            Err(E) => info!("Error {}", E),
+            Err(e) => info!("Error {}", e),
         }
 
         Timer::after(Duration::from_secs(3)).await;
