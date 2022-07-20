@@ -5,6 +5,10 @@
 #![no_main]
 #![feature(type_alias_impl_trait)]
 
+// Shameless copy paste for the compass logic
+// https://github.com/kalkyl/qmc5883l-async/blob/main/examples/src/bin/compass.rs
+const DECLINATION_RADS: f32 = 0.122173;
+
 use nrf_embassy as _; // global logger + panicking-behavior
 
 use defmt::info;
@@ -13,6 +17,8 @@ use embassy::time::{Delay, Duration, Timer};
 use embassy_nrf::twim::{self, Twim};
 use embassy_nrf::{interrupt, Peripherals};
 use hmc5883_async::*;
+use libm::atan2;
+use core::f32::consts::PI;
 
 #[embassy::main]
 async fn main(_spawner: Spawner, p: Peripherals) {
@@ -31,10 +37,23 @@ async fn main(_spawner: Spawner, p: Peripherals) {
         // Go and unquote if !Self::reading_in_range(&sample_i16) 
         // on l. 243 in the driver to get bad readings :)
         match hmc.get_mag_vector().await {
-            Ok(mag) => info!("Magnitude vector: {:?}", mag),
+            Ok([x,y,z]) => {
+
+                let mut heading = atan2(y as f64, x as f64) as f32 + DECLINATION_RADS;
+                if heading < 0.0 {
+                    heading += 2.0 * PI;
+                } else if heading > 2.0 * PI {
+                    heading -= 2.0 * PI;
+                }
+                let heading_degrees = heading * 180.0 / PI;
+                info!(
+                    "x={}, y={}, z={}: heading={} degrees",
+                    x, y, z, heading_degrees
+                );
+            },
             Err(e) => info!("Error {}", e),
         }
 
-        Timer::after(Duration::from_secs(3)).await;
+        Timer::after(Duration::from_millis(500)).await;
     }
 }
