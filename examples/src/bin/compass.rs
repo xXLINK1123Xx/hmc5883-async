@@ -5,11 +5,11 @@
 #![no_main]
 #![feature(type_alias_impl_trait)]
 
-// Shameless copy paste for the compass logic
+// Formulas and compass logic found:
 // https://github.com/kalkyl/qmc5883l-async/blob/main/examples/src/bin/compass.rs
-const DECLINATION_RADS: f32 = 0.122173;
+const DECLINATION_RADS: f32 = 0.122173048;
 
-use nrf_embassy as _; // global logger + panicking-behavior
+use compass_example as _; // global logger + panicking-behavior
 
 use defmt::info;
 use embassy::executor::Spawner;
@@ -20,6 +20,10 @@ use hmc5883_async::*;
 use libm::atan2;
 use core::f32::consts::PI;
 
+/// This example demonstrate how the sensor
+/// returns temperature and magnitude vector data
+/// We then apply a formula found in Arduino
+/// to get the North (towards zero or 360°).
 #[embassy::main]
 async fn main(_spawner: Spawner, p: Peripherals) {
     let config = twim::Config::default();
@@ -34,8 +38,7 @@ async fn main(_spawner: Spawner, p: Peripherals) {
         if let Ok(temp) = hmc.get_temperature().await {
             info!("Temperature: {:?}", temp);
         }
-        // Go and unquote if !Self::reading_in_range(&sample_i16) 
-        // on l. 243 in the driver to get bad readings :)
+
         match hmc.get_mag_vector().await {
             Ok([x,y,z]) => {
 
