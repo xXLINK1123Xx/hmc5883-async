@@ -19,6 +19,9 @@ keywords = [
     "magnetometer"
 ]
 readme = "README.md"
+exclude = [
+    ".cargo_vcs_info.json"
+]
 
 [dependencies]
 defmt = "0.3.2"
