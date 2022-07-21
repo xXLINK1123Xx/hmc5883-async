@@ -75,10 +75,6 @@ pub enum MeasurementModeSetting {
     NormalMode = 0b00,
     /// Positive bias current
     PositiveBias = 0b01,
-    /// Negative bias current-- unsupported on HMC5883
-    NegativeBias = 0b10,
-    /// Temperature sensor only -- unsupported on HMC5883
-    TemperatureOnly = 0b11,
 }
 #[derive(Debug)]
 pub struct HMC5983<I2C> {
@@ -154,7 +150,7 @@ where
         }
 
         self.set_all_config_a(
-            MeasurementModeSetting::NegativeBias,
+            MeasurementModeSetting::NormalMode,
             OdrSetting::Odr30_0Hz,
             SampleAvgSetting::AvgSamples8,
             true,
@@ -163,12 +159,9 @@ where
 
         self.set_gain(GainSetting::Gain0820).await?;
         // (Continuous-measurement mode)
-        self.write_reg(
-            REG_CONFIG_C,
-            MeasurementModeSetting::NegativeBias as u8,
-        )
-        .await?;
-        delay_source.delay_ms(100).await;
+        self.write_reg(REG_CONFIG_C, MeasurementModeSetting::NormalMode as u8)
+            .await?;
+        let _ = delay_source.delay_ms(100).await;
 
         Ok(())
     }
@@ -232,7 +225,7 @@ where
 
     /// Combine high and low bytes of i16 mag value
     fn raw_reading_to_i16(buf: &[u8], idx: usize) -> i16 {
-        let val: i16 = (buf[idx + 1] as i16) | ((buf[idx] as i16) << 8);
+        let val: i16 = (buf[idx] as i16) << 8 | buf[idx + 1] as i16;
         val
     }
 
@@ -249,11 +242,11 @@ where
             Self::raw_reading_to_i16(&buf, 4),
         ];
 
-        // if !Self::reading_in_range(&sample_i16) {
-        //     debug!("bad reading?");
+        if !Self::reading_in_range(&sample_i16) {
+            debug!("bad reading?");
 
-        //     return Err(Error::OutOfRange);
-        // }
+            return Err(Error::OutOfRange);
+        }
 
         //TODO do cross-axis flow calibration?
         Ok(sample_i16)

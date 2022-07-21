@@ -33,7 +33,7 @@ To run the example:
 
 ```console
 $ cd examples
-$ cargo rb kompass
+$ cargo rb compass
 ```
 
 
