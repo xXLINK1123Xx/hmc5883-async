@@ -6,7 +6,7 @@ LICENSE: BSD3 (see LICENSE file)
 #![no_std]
 
 use defmt::{debug, Format};
-use embedded_hal_async::{delay::DelayUs, i2c::I2c};
+use embedded_hal_async::{delay::DelayNs, i2c::I2c};
 const I2C_ADDRESS: u8 = 0x1E;
 
 /// Errors in this crate
@@ -92,7 +92,7 @@ where
 
     pub async fn init(
         &mut self,
-        delay_source: &mut impl DelayUs,
+        delay_source: &mut impl DelayNs,
     ) -> Result<(), crate::Error<CommE>> {
         self.reset(delay_source).await
     }
@@ -128,7 +128,7 @@ where
 
     async fn reset(
         &mut self,
-        delay_source: &mut impl DelayUs,
+        delay_source: &mut impl DelayNs,
     ) -> Result<(), crate::Error<CommE>> {
         //wakeup the chip
         for reg in 0x00..0x0D {
